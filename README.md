@@ -14,8 +14,8 @@ online).
 
 | | Address |
 |---|---|
-| App (Netlify) | https://your-site-name.netlify.app |
-| API (Render) | https://your-api-name.onrender.com · check it at `/api/health` |
+| App (Netlify) | https://moviegenie.netlify.app |
+| API (Render) | https://moviegenie-api.onrender.com · check it at [/api/health](https://moviegenie-api.onrender.com/api/health) |
 
 The API runs on Render's free plan, which sleeps when nobody uses it: the first
 request after a quiet while can take about 30 seconds.
@@ -224,7 +224,7 @@ account still exists, and answer 401 if not.
 ### Try it with curl
 
 ```sh
-API=https://your-api-name.onrender.com
+API=https://moviegenie-api.onrender.com
 
 # 1 · no token
 curl -i $API/api/watchlist                               # 401
