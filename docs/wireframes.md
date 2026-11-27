@@ -40,6 +40,7 @@ first prototype: light page, white cards, one purple navbar.
 | `/login` | Log in | public |
 | `/watchlist` | Watchlist | protected |
 | `/genie` | Ask the Genie | protected |
+| `/settings` | Settings | protected |
 | `*` | Page not found | public |
 
 ## Navbar (every screen)
@@ -51,7 +52,7 @@ first prototype: light page, white cards, one purple navbar.
 ```
 
 - Right side, logged in: a circle with the user's initial, the display name
-  and a log-out icon. Logged out: "Log in" and a "Sign up" button.
+  (both open Settings) and a log-out icon. Logged out: "Log in" and a "Sign up" button.
 - Watchlist and Ask the Genie appear only when logged in.
 - Phone: the three groups wrap onto separate lines.
 
@@ -202,3 +203,35 @@ Three steps on one screen.
   message, no saved movie in the chosen genre, no result ("Nothing matched").
 - Opening a pick and coming back returns to the picks.
 - "Ask again" starts over with nothing picked and no filters.
+
+## 7. Settings (`/settings`) 🔒
+
+```
+┌──────────────────────────────┐
+│ Settings                     │
+│ ┌──────────────────────────┐ │
+│ │ Profile                  │ │
+│ │ Email   [elie@uni.edu]   │ │  greyed: cannot change
+│ │ Display name [Elie     ] │ │
+│ │ Country  [Lebanon     ▾] │ │
+│ │ [ Save changes ]  Saved. │ │
+│ └──────────────────────────┘ │
+│ ┌──────────────────────────┐ │
+│ │ Password                 │ │
+│ │ Current  [••••••••     ] │ │
+│ │ New      [             ] │ │
+│ │ Again    [             ] │ │
+│ │ [ Change password ]      │ │
+│ └──────────────────────────┘ │
+│ ┌──────────────────────────┐ │  red border
+│ │ Delete account           │ │
+│ │ Removes your watchlist…  │ │
+│ │ Password [             ] │ │
+│ │ [ Delete my account ]    │ │  asks "Are you sure?"
+│ └──────────────────────────┘ │
+└──────────────────────────────┘
+```
+
+- Each form has its own message under it. After deleting, the user lands on
+  Browse, logged out.
+- Wide screen: the cards sit two per row.

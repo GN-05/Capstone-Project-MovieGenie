@@ -19,7 +19,9 @@ MongoDB Atlas with Mongoose. Three collections. Every private document carries a
    └─────────────────────────────────────────────┘
 ```
 
-One user has many watchlist items and many genie requests.
+One user has many watchlist items and many genie requests. Deleting a user
+(Settings) deletes their watchlist items and genie requests too, so nothing is
+left pointing at a missing user.
 
 ## users
 
@@ -28,8 +30,8 @@ One user has many watchlist items and many genie requests.
 | `_id` | ObjectId | created by MongoDB |
 | `email` | String | required, unique, trimmed, lowercase |
 | `passwordHash` | String | required; bcrypt hash, cost 12. The plain password is never stored |
-| `displayName` | String | required, trimmed, 1 to 40 characters |
-| `country` | String | 2-letter code for "where to watch", default `'LB'` |
+| `displayName` | String | required, trimmed, 1 to 40 characters; editable in Settings |
+| `country` | String | 2-letter code for "where to watch", default `'LB'`; editable in Settings |
 | `createdAt`, `updatedAt` | Date | added by `{ timestamps: true }` |
 
 ## watchlistitems
@@ -103,6 +105,7 @@ Index: `{ userId: 1, createdAt: -1 }` for the history list.
 | Screen | Data | Source |
 |---|---|---|
 | Sign up, Log in | email, password, display name, country | `users` |
+| Settings | display name, country, password; delete | `users` (+ the user's `watchlistitems` and `genierequests` on delete) |
 | Browse, Search | trending, top rated, by genre, by platform, sorted, search results | TMDB through Express |
 | Movie detail | overview, runtime, genres, director, cast | TMDB through Express |
 | Movie detail | "saved?" state | `watchlistitems` |
