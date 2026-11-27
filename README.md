@@ -35,7 +35,7 @@ request after a quiet while can take about 30 seconds.
 ## Project structure
 
 ```
-Movie_claude/
+Capstone_Project-MovieGenie/
 ├── client/                    # Vite + React · hosted on Netlify
 │   ├── src/
 │   │   ├── api/client.js      # apiFetch: base URL, token, errors
@@ -81,12 +81,75 @@ Movie_claude/
 
 ## Run it on your own computer
 
-You need Node.js 22.22 or later (or 24.15 or later), a MongoDB Atlas connection
-string and a TMDB API key. Older versions of Node cannot run the client's tests:
-jsdom, the fake browser they run in, needs one of these. Check yours with
-`node -v`.
+Follow the steps in order. Every command is typed in a **terminal**:
 
-### 1. Server
+- **Windows:** use **Git Bash** (installed with Git in step 1). Right-click a
+  folder → "Open Git Bash here", or open Git Bash from the Start menu.
+- **macOS:** use the **Terminal** app.
+
+Type one command at a time and press Enter. To stop a running program in a
+terminal, press `Ctrl + C`.
+
+### Step 1 · Install the tools
+
+1. **Node.js** (version 22.22 or later, or 24.15 or later): download the
+   "LTS" version from https://nodejs.org and install it with the default options.
+2. **Git**: download it from https://git-scm.com and install it with the
+   default options.
+3. Close and reopen your terminal, then check both are installed:
+
+   ```sh
+   node -v
+   git --version
+   ```
+
+   `node -v` must print `v22.22` or higher (or `v24.15` or higher).
+
+### Step 2 · Get the code
+
+```sh
+git clone https://github.com/GN-05/Capstone_Project-MovieGenie.git
+cd Capstone_Project-MovieGenie
+```
+
+### Step 3 · Create a free MongoDB Atlas database
+
+1. Sign up at https://www.mongodb.com/cloud/atlas/register.
+2. Create a **free cluster** (the "M0" / Free option). Any region works.
+3. **Database Access** (left menu, under Security) → **Add New Database User** →
+   choose a username and a password (avoid symbols like `@ : / ?` in the
+   password) → role "Read and write to any database" → **Add User**.
+4. **Network Access** (left menu) → **Add IP Address** → **Add Current IP
+   Address** → **Confirm**. (Choosing "Allow access from anywhere",
+   `0.0.0.0/0`, also works and is needed later for Render.)
+5. **Database** (left menu) → your cluster → **Connect** → **Drivers** → copy the
+   connection string. It looks like:
+
+   ```
+   mongodb+srv://myuser:<db_password>@cluster0.abcde.mongodb.net/?retryWrites=true&w=majority
+   ```
+
+6. In that string, replace `<db_password>` with the password from point 3, and
+   add a database name, `moviegenie`, just before the `?`:
+
+   ```
+   mongodb+srv://myuser:MyPassword123@cluster0.abcde.mongodb.net/moviegenie?retryWrites=true&w=majority
+   ```
+
+   Keep it: this is your `MONGODB_URI`.
+
+### Step 4 · Get a free TMDB API key
+
+1. Sign up at https://www.themoviedb.org/signup and confirm your email.
+2. Go to https://www.themoviedb.org/settings/api → request an API key → choose
+   **Developer** → fill in the short form (any description, e.g. "student
+   project").
+3. On the same page, copy the **API Key** (the short one, about 32 characters),
+   **not** the long "API Read Access Token". This is your `TMDB_API_KEY`.
+
+### Step 5 · Install and configure the server (the API)
+
+From the project folder:
 
 ```sh
 cd server
@@ -94,68 +157,198 @@ npm install
 cp .env.example .env
 ```
 
-Open `server/.env` and fill in:
+Open the new file `server/.env` in any text editor (VS Code, Notepad...) and
+set these lines:
 
-- `MONGODB_URI`: your Atlas connection string.
-- `JWT_SECRET`: a long random string. Generate one with
-  `node -e "console.log(require('crypto').randomBytes(32).toString('hex'))"`.
-- `TMDB_API_KEY`: the v3 "API Key" from https://www.themoviedb.org/settings/api.
-- `CLIENT_ORIGIN`: the address of the React app, exactly as Vite prints it in
-  step 2, with no trailing slash.
+- `MONGODB_URI=` paste your connection string from step 3.
+- `JWT_SECRET=` paste a long random text. To make one, run this in the terminal
+  and copy what it prints:
 
-Then start it:
+  ```sh
+  node -e "console.log(require('crypto').randomBytes(32).toString('hex'))"
+  ```
 
-```sh
-npm run dev
-```
+- `TMDB_API_KEY=` paste your key from step 4.
+- Leave `CLIENT_ORIGIN` for now: you will fill it in step 7.
 
-It prints `connected to MongoDB` and `API listening on port 3000`.
-If a setting is missing, it stops and names it.
+Save the file. Each line is `NAME=value`, with no spaces and no quotes.
 
-### 2. Client
+### Step 6 · Install the client (the React app)
 
-In a second terminal:
+Go back to the project folder, then into `client`:
 
 ```sh
-cd client
+cd ../client
 npm install
 cp .env.example .env.development
 npm run dev
 ```
 
-In `client/.env.development`, set `VITE_API_URL` to the address of your API
-(the one the server printed, with its port). Then open the address Vite prints.
-The Browse page shows this week's trending movies.
+Vite prints a few lines, one of which starts with `Local:`, for example
+`Local:   http://<address>:5173/`. **Copy that address** (everything after
+`Local:`). Then press `Ctrl + C` to stop the client for now.
 
-### 3. Tests
+### Step 7 · Connect the two halves
+
+The client must know where the API is, and the API must accept the client:
+
+1. Open `client/.env.development` and set `VITE_API_URL` to the **same address
+   Vite printed, but with port `3000` instead of `5173`**, and with no `/` at the
+   end. Example: if Vite printed `http://<address>:5173/`, write
+   `VITE_API_URL=http://<address>:3000`.
+2. Open `server/.env` and set `CLIENT_ORIGIN` to the **address Vite printed**,
+   without the `/` at the end. Example: `CLIENT_ORIGIN=http://<address>:5173`.
+
+Save both files.
+
+### Step 8 · Start it
+
+You need **two terminals**, both open in the project folder.
+
+Terminal 1, the API:
 
 ```sh
-cd server && npm test    # the genie's ranking, the watched rule, and the API's 401 and 400
-                         # cases (auth, watchlist, genie, settings)
-cd client && npm test    # the star rating component and the list helpers
+cd server
+npm run dev
 ```
 
-The tests need no database and no TMDB key.
+Wait until it prints `connected to MongoDB` and `API listening on port 3000`.
+Leave this terminal open.
 
-## Deployment
+Terminal 2, the React app:
 
-Three pieces, three hosts: the database on MongoDB Atlas, the API on Render, the
-React app on Netlify. The browser talks only to the API; only the API talks to
-the database and to TMDB.
+```sh
+cd client
+npm run dev
+```
 
-| Host | Settings |
+Open the `Local:` address in your browser. The Browse page shows this week's
+trending movies. Create an account with **Sign up** and try the app.
+
+### Step 9 · Run the tests (optional)
+
+From the project folder:
+
+```sh
+cd server
+npm test
+cd ../client
+npm test
+```
+
+The server tests check the genie's ranking, the watched rule and the API's 401
+and 400 cases; the client tests check the star rating component and the list
+helpers. They need no database and no TMDB key.
+
+### If something goes wrong
+
+| You see | What to do |
 |---|---|
-| MongoDB Atlas | Network Access allows `0.0.0.0/0`, so Render can connect |
-| Render (web service) | Root directory `server` · build `npm ci` · start `npm start` · environment variables `MONGODB_URI`, `JWT_SECRET` (a new one, not the development one), `CLIENT_ORIGIN` (the Netlify address), `TMDB_API_KEY`, `NODE_ENV=production`; Render sets `PORT` itself |
-| Netlify (site) | Base directory `client` · build `npm run build` · publish `client/dist` · environment variable `VITE_API_URL` (the Render address) |
+| `Missing env var: X` when starting the server | The line `X=` in `server/.env` is empty or misspelled. Fill it in and start again. |
+| `DB connection failed` | Check `MONGODB_URI` (password, database name before `?`) and Atlas **Network Access** (step 3.4). |
+| The page says "Could not load movies" | Check that terminal 1 is still running, then `VITE_API_URL` (step 7.1). After changing it, stop the client (`Ctrl + C`) and run `npm run dev` again. |
+| The browser console says "blocked by CORS policy" | `CLIENT_ORIGIN` in `server/.env` must be exactly the `Local:` address, without the final `/`. Restart the server after changing it. |
+| `npm` or `node` is "not found" | Node.js is not installed, or the terminal was opened before installing it: reopen the terminal. |
+| `node -v` shows an older version | Install the current LTS from https://nodejs.org. |
 
-`client/public/_redirects` sends every address to `index.html`, so refreshing a
-page like `/watchlist` does not answer 404. Every push to `master` redeploys both
-hosts. A `VITE_` value is built into the app: after changing one, deploy the
-site again.
+## Deploy it online
 
-GitHub Actions (`.github/workflows/ci.yml`) runs the server and client tests on
-every push and pull request.
+Three pieces, three hosts: the database on **MongoDB Atlas**, the API on
+**Render**, the React app on **Netlify**. The browser talks only to the API;
+only the API talks to the database and to TMDB. Do the steps in this order:
+the API first, then the app.
+
+You need the code in your own GitHub repository (push it, or fork this one),
+and the `MONGODB_URI`, `TMDB_API_KEY` from steps 3 and 4.
+
+### Step A · Atlas: allow Render to connect
+
+Atlas → **Network Access** → **Add IP Address** → **Allow Access from
+Anywhere** (`0.0.0.0/0`) → **Confirm**. Wait until it shows **Active**.
+Render's servers have no fixed address, so this is required.
+
+### Step B · Render: put the API online
+
+1. Sign up at https://render.com **with GitHub**.
+2. **New** → **Web Service** → choose your repository (if it is not listed,
+   click **Configure account** and give Render access to it).
+3. Fill in:
+
+   | Field | Value |
+   |---|---|
+   | Name | e.g. `moviegenie-api` (it becomes the address) |
+   | Language | Node |
+   | Branch | `master` (or the branch your repository uses) |
+   | Root Directory | `server` |
+   | Build Command | `npm ci` |
+   | Start Command | `npm start` |
+   | Instance Type | Free |
+
+4. **Environment Variables**, one row each:
+
+   | Key | Value |
+   |---|---|
+   | `MONGODB_URI` | your connection string |
+   | `TMDB_API_KEY` | your TMDB key |
+   | `JWT_SECRET` | a **new** random text (same command as in step 5) |
+   | `CLIENT_ORIGIN` | for now `https://placeholder.netlify.app` (fixed in step D) |
+   | `NODE_ENV` | `production` |
+
+   Do not add `PORT`: Render chooses it.
+5. **Advanced** → **Health Check Path**: `/api/health`.
+6. **Deploy Web Service**. In **Logs**, wait for `connected to MongoDB`, then a
+   green **Live** badge.
+7. Copy your address (e.g. `https://moviegenie-api.onrender.com`) and open
+   `<your address>/api/health`: it must show `{"status":"ok"}`.
+
+### Step C · Netlify: put the app online
+
+1. Sign up at https://www.netlify.com **with GitHub**.
+2. **Add new project** → **Import an existing project** → **GitHub** → your
+   repository.
+3. Fill in:
+
+   | Field | Value |
+   |---|---|
+   | Branch to deploy | `master` (or your branch) |
+   | Base directory | `client` |
+   | Build command | `npm run build` |
+   | Publish directory | `client/dist` |
+
+4. **Add environment variables**: `VITE_API_URL` = your Render address from
+   step B.7, with no `/` at the end and no `/api`.
+5. **Deploy**. When it says **Published**, open **Project configuration** →
+   **Change project name** to choose your address (e.g. `moviegenie` gives
+   `https://moviegenie.netlify.app`).
+6. Make sure the site is **public**: in Project configuration, under visitor
+   access / password protection, choose no protection. Check by opening the
+   address in a private (incognito) window.
+
+`client/public/_redirects` sends every address to the app, so refreshing a page
+like `/watchlist` does not answer 404.
+
+### Step D · Render: accept the real app
+
+Render → your service → **Environment** → set `CLIENT_ORIGIN` to your Netlify
+address, exactly, with no `/` at the end (e.g. `https://moviegenie.netlify.app`)
+→ **Save, rebuild, and deploy**. Wait for **Live**.
+
+### Step E · Test it like a stranger
+
+On a phone, on mobile data, open your Netlify address and: browse movies, sign
+up, save a movie as Watched and rate it, refresh the page on `/watchlist`, ask
+the genie, log out and log in again.
+
+| You see | What to do |
+|---|---|
+| "blocked by CORS policy" in the browser console | `CLIENT_ORIGIN` on Render does not match the Netlify address exactly (step D). |
+| "Could not load movies" or requests to `undefined/api` | `VITE_API_URL` is missing on Netlify: add it, then **Deploys** → **Trigger deploy** (a `VITE_` value is built into the app, so the site must be rebuilt). |
+| The first load takes about 30 seconds | Normal: Render's free plan was asleep. |
+| The Render service stops right after starting | Read its **Logs**: a missing environment variable, or Atlas Network Access (step A). |
+
+After this, every push to the deployed branch redeploys both hosts, and GitHub
+Actions (`.github/workflows/ci.yml`) runs the server and client tests on every
+push and pull request.
 
 ## API
 
@@ -217,9 +410,9 @@ account still exists, and answer 401 if not.
 |---|---|---|
 | `POST /api/genie` | `{ seedTmdbIds }` or `{ wholeWatchlist: true }`, plus optional `genreId`, `yearFrom`, `yearTo`, `minRating` | 201 the request with its ranked `results` · 400 |
 
-`seedTmdbIds` holds 1 to 10 TMDB ids of watched movies on the user's watchlist. With
-`wholeWatchlist`, the server takes the user's 10 best rated watched movies of
-`genreId` (of any genre when it is absent).
+`seedTmdbIds` holds 1 to 10 TMDB ids of watched movies on the user's watchlist.
+With `wholeWatchlist`, the server takes the user's 10 best rated watched movies
+of `genreId` (of any genre when it is absent).
 
 ### Try it with curl
 
@@ -272,14 +465,15 @@ curl -X POST $API/api/genie \
   the other moves it. A watched movie can be rated from 1 to 5 stars.
   Changes appear at once and are saved behind the scenes (optimistic
   updates); if the server refuses, the old state comes back with a message.
-  The list can be filtered (to watch, watched), searched by title (as you type, ignoring case and accents) and sorted
-  (latest added, latest watched, my rating, title, release date).
-  Everything is stored in the database.
+  The list can be filtered (to watch, watched), searched by title (as you
+  type, ignoring case and accents) and sorted (latest added, latest watched,
+  my rating, title, release date). Everything is stored in the database.
 - **Ask the Genie:** pick up to 10 watched movies by their posters (searched
   and sorted as you like), or let the genie use the best rated ones of the
   genre you feel like watching (with "Any genre", ties go to the movies that
-  widen the mix of genres); narrow by era and minimum rating, and get 10 ranked picks, each with its reasons.
-  See [docs/genie-ranking.md](docs/genie-ranking.md).
+  widen the mix of genres); narrow by era and minimum rating, and get 10
+  ranked picks, each with its reasons. See
+  [docs/genie-ranking.md](docs/genie-ranking.md).
 - **Responsive:** built mobile-first, from two cards per row on a phone to
   four on a desktop.
 
