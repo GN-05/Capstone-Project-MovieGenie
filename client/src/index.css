@@ -1,0 +1,118 @@
+/* ---- design tokens: every color and space comes from here ---- */
+:root {
+  /* colors, named by role */
+  --surface: #f3f4f6;          /* page background */
+  --surface-raised: #ffffff;   /* cards */
+  --border: #d1d5db;
+  --text: #111827;
+  --text-muted: #4b5563;
+  --brand: #7c3aed;            /* navbar, buttons, links */
+  --on-brand: #ffffff;         /* text on the brand color */
+  --gold: #f59e0b;             /* stars */
+  --success: #15803d;
+  --danger: #b91c1c;
+  --stage: #000000;            /* behind the trailer */
+
+  /* spacing scale: 4, 8, 16, 24, 32, 48, 64 */
+  --sp-1: 4px;
+  --sp-2: 8px;
+  --sp-3: 16px;
+  --sp-4: 24px;
+  --sp-5: 32px;
+  --sp-6: 48px;
+  --sp-7: 64px;
+
+  --radius: 10px;
+}
+
+/* ---- base ---- */
+* {
+  box-sizing: border-box;
+}
+
+body {
+  margin: 0;
+  background: var(--surface);
+  color: var(--text);
+  font-family: system-ui, sans-serif;
+  font-size: 1rem;
+  line-height: 1.5;
+}
+
+h1, h2, h3, p, ul {
+  margin: 0;
+  padding: 0;
+}
+
+h1 {
+  font-size: 1.75rem;
+  line-height: 1.15;
+}
+
+h2 {
+  font-size: 1.25rem;
+  line-height: 1.25;
+}
+
+h3 {
+  font-size: 1rem;
+  line-height: 1.25;
+}
+
+ul {
+  list-style: none;
+}
+
+img {
+  display: block;
+  max-width: 100%;
+  height: auto;
+}
+
+a {
+  color: var(--brand);
+  transition: opacity 180ms ease-out;
+}
+
+a:hover {
+  opacity: 0.75;
+}
+
+small {
+  color: var(--text-muted);
+}
+
+/* ---- page structure: grid for structure, flex for content ---- */
+.page {
+  display: grid;
+  grid-template-rows: auto 1fr auto;
+  min-height: 100vh;
+}
+
+.page-main {
+  display: flex;
+  flex-direction: column;
+  gap: var(--sp-4);
+  width: 100%;
+  max-width: 1200px;
+  margin: 0 auto;
+  padding: var(--sp-4) var(--sp-3);
+}
+
+.page-head {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--sp-3);
+}
+
+.site-footer {
+  padding: var(--sp-3);
+  color: var(--text-muted);
+  text-align: center;
+}
+
+.error {
+  color: var(--danger);
+}

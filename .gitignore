@@ -1,0 +1,14 @@
+node_modules
+dist
+
+# secrets and local settings
+.env
+.env.development
+.env.production
+*.local
+
+# logs and editor files
+*.log
+.DS_Store
+.vscode
+.idea
