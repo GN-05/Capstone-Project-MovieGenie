@@ -7,8 +7,8 @@ into a short, ranked list of recommendations, and explains each one.
 Capstone project for the Web Development course.
 Team: Vanessa Badr, Ghadi Nehme, Elie Hadchity.
 
-**Status: Milestone 2** (the back end works: authentication plus the CRUD
-routes; the React screens come in Milestone 3). The proposal is in
+**Status: Milestone 3** (the React front end is connected to the API and the
+core features work from the UI). Deployment is Milestone 4. The proposal is in
 [docs/proposal.md](docs/proposal.md).
 
 ## Tech stack
@@ -27,8 +27,22 @@ routes; the React screens come in Milestone 3). The proposal is in
 
 ```
 Movie_claude/
-├── client/                    # Vite + React (the scaffold; screens in Milestone 3)
-│   ├── src/                   # App.jsx checks that the API answers
+├── client/                    # Vite + React · http://localhost:5173
+│   ├── src/
+│   │   ├── api/client.js      # apiFetch: base URL, token, errors
+│   │   ├── auth/              # AuthContext (login, signup, logout, settings),
+│   │   │                      # RequireAuth
+│   │   ├── watchlist/         # WatchlistContext: the saved movies, shared app-wide
+│   │   ├── genie/             # GenieContext: the current ask, kept across pages
+│   │   ├── hooks/             # useApi (one GET), useMovies (paged lists)
+│   │   ├── components/        # Header, Footer, BrowseControls, MovieGrid,
+│   │   │                      # MovieCard, Poster, SaveButton, StarRating
+│   │   ├── pages/             # Browse, Movie, Login, Signup, Watchlist, Genie,
+│   │   │                      # Settings, NotFound
+│   │   ├── utils/             # movies.js (pure helpers), countries.js
+│   │   ├── App.jsx            # routes; pages are loaded on demand
+│   │   ├── main.jsx           # mounts React inside the providers
+│   │   └── index.css          # design tokens and styles
 │   └── .env.example
 ├── server/                    # Express · http://localhost:3000
 │   ├── app.js                 # middleware and routes (no port: testable)
@@ -57,7 +71,9 @@ Movie_claude/
 ## Setup
 
 You need Node.js 22.22 or later (or 24.15 or later), a MongoDB Atlas connection
-string and a TMDB API key.
+string and a TMDB API key. Older versions of Node cannot run the client's tests:
+jsdom, the fake browser they run in, needs one of these. Check yours with
+`node -v`.
 
 ### 1. Server
 
@@ -85,14 +101,23 @@ If a setting is missing, it stops and names it.
 
 ### 2. Client
 
-The client is still the Milestone 1 scaffold: see the client steps there. It
-only checks that the API answers.
+In a second terminal:
+
+```sh
+cd client
+npm install
+cp .env.example .env.development
+npm run dev
+```
+
+Open http://localhost:5173. The Browse page shows this week's trending movies.
 
 ### 3. Tests
 
 ```sh
 cd server && npm test    # the genie's ranking, the watched rule, and the API's 401 and 400
                          # cases (auth, watchlist, genie, settings)
+cd client && npm test    # the star rating component and the list helpers
 ```
 
 The tests need no database and no TMDB key.
@@ -186,25 +211,40 @@ curl -X POST localhost:3000/api/genie \
   -d '{"seedTmdbIds":[27205],"minRating":7}'
 ```
 
-## Features (back end)
+## Features
 
-- **Accounts:** signup and login, passwords hashed with bcrypt (cost 12), a JWT
-  (1 hour) returned at login. `requireAuth` locks the watchlist, the genie and
-  the settings; a missing or bad token answers 401, never a crash.
-- **Watchlist (the main resource):** full CRUD, every query scoped to the user
-  in the token; another user's item answers 404. A movie is saved as "to
-  watch" or "watched"; only a watched movie can be rated 1 to 5.
-- **Movies:** trending, top rated, by genre and platform, sorted, search, one
-  movie with cast and where to watch, all from TMDB through our server, with a
-  cache. Movies with no rating or fewer than 300 votes are dropped.
-- **Ask the Genie:** ranks recommendations from the user's watched movies; see
-  [docs/genie-ranking.md](docs/genie-ranking.md).
-- **Settings:** change display name, country and password; delete the account
-  and everything it owns.
-- **Security:** zod validation on every input, helmet, rate limits (5 logins
-  per 15 minutes), `sanitizeFilter`, secrets only in `.env`.
-
-Every route can be tried with curl (above).
+- **Accounts:** sign up, log in and log out. The watchlist, the genie and the
+  settings are protected routes; an expired session returns to the login
+  screen. The navbar shows who is logged in; their name opens the settings.
+- **Settings:** change the display name and the country (which changes "where
+  to watch" and the platform filters at once), change the password (the
+  current one is asked first), or delete the account with its watchlist and
+  genie history (password and a confirmation asked).
+- **Browse:** trending, top rated and by genre, plus search, in a grid that
+  loads the next page as you scroll and never shows a movie twice. Movies
+  with no TMDB rating ("n/a") or fewer than 300 votes are dropped on the
+  server, so no list in the app ever shows them.
+- **Sort and filter:** every list can be filtered by the streaming platforms
+  available in the user's country. The Genres list can also be sorted by
+  popularity (the default), release date, rating or title; Trending and Top
+  rated keep their own order.
+- **Movie page:** a scene image that plays the trailer, the overview, runtime,
+  genres, director, cast and where to watch in the user's country.
+- **Watchlist:** every movie card has two buttons, "To watch" and "Watched".
+  The chosen one turns green; clicking it again removes the movie, clicking
+  the other moves it. A watched movie can be rated from 1 to 5 stars.
+  Changes appear at once and are saved behind the scenes (optimistic
+  updates); if the server refuses, the old state comes back with a message.
+  The list can be filtered (to watch, watched), searched by title (as you type, ignoring case and accents) and sorted
+  (latest added, latest watched, my rating, title, release date).
+  Everything is stored in the database.
+- **Ask the Genie:** pick up to 10 watched movies by their posters (searched
+  and sorted as you like), or let the genie use the best rated ones of the
+  genre you feel like watching (with "Any genre", ties go to the movies that
+  widen the mix of genres); narrow by era and minimum rating, and get 10 ranked picks, each with its reasons.
+  See [docs/genie-ranking.md](docs/genie-ranking.md).
+- **Responsive:** built mobile-first, from two cards per row on a phone to
+  four on a desktop.
 
 ## Architecture overview
 
