@@ -10,7 +10,7 @@ try {
   await mongoose.connect(dbUri);
   console.log('connected to MongoDB');
   app.listen(port, () => console.log(
-    `API listening on http://localhost:${port}`));
+    `API listening on port ${port}`));
 } catch (err) {
   console.error('DB connection failed:', err.message);
   process.exit(1);

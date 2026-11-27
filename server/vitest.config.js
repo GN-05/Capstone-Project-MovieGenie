@@ -5,7 +5,7 @@ export default defineConfig({
     // tests never use the real secrets in .env
     env: {
       JWT_SECRET: 'test-secret',
-      CLIENT_ORIGIN: 'http://localhost:5173',
+      CLIENT_ORIGIN: 'https://moviegenie-test.netlify.app',
     },
   },
 });

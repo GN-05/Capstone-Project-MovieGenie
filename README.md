@@ -7,9 +7,18 @@ into a short, ranked list of recommendations, and explains each one.
 Capstone project for the Web Development course.
 Team: Vanessa Badr, Ghadi Nehme, Elie Hadchity.
 
-**Status: Milestone 3** (the React front end is connected to the API and the
-core features work from the UI). Deployment is Milestone 4. The proposal is in
-[docs/proposal.md](docs/proposal.md).
+**Status: Milestone 4** (deployed: the app, the API and the database all run
+online).
+
+## Live
+
+| | Address |
+|---|---|
+| App (Netlify) | https://your-site-name.netlify.app |
+| API (Render) | https://your-api-name.onrender.com · check it at `/api/health` |
+
+The API runs on Render's free plan, which sleeps when nobody uses it: the first
+request after a quiet while can take about 30 seconds.
 
 ## Tech stack
 
@@ -27,7 +36,7 @@ core features work from the UI). Deployment is Milestone 4. The proposal is in
 
 ```
 Movie_claude/
-├── client/                    # Vite + React · http://localhost:5173
+├── client/                    # Vite + React · hosted on Netlify
 │   ├── src/
 │   │   ├── api/client.js      # apiFetch: base URL, token, errors
 │   │   ├── auth/              # AuthContext (login, signup, logout, settings),
@@ -43,8 +52,9 @@ Movie_claude/
 │   │   ├── App.jsx            # routes; pages are loaded on demand
 │   │   ├── main.jsx           # mounts React inside the providers
 │   │   └── index.css          # design tokens and styles
+│   ├── public/_redirects      # Netlify: every address serves the React app
 │   └── .env.example
-├── server/                    # Express · http://localhost:3000
+├── server/                    # Express · hosted on Render
 │   ├── app.js                 # middleware and routes (no port: testable)
 │   ├── server.js              # connects to MongoDB, then listens
 │   ├── config.js              # stops the server if a setting is missing
@@ -61,6 +71,7 @@ Movie_claude/
 │   │   └── genie.js           # the ranking: pure functions
 │   ├── tests/                 # api, genie and watchlist tests
 │   └── .env.example
+├── .github/workflows/ci.yml   # runs both test suites on every push
 └── docs/
     ├── proposal.md            # the one-page proposal
     ├── wireframes.md          # every main screen and how users move between them
@@ -68,7 +79,7 @@ Movie_claude/
     └── genie-ranking.md       # how picks are merged, weighted and filtered
 ```
 
-## Setup
+## Run it on your own computer
 
 You need Node.js 22.22 or later (or 24.15 or later), a MongoDB Atlas connection
 string and a TMDB API key. Older versions of Node cannot run the client's tests:
@@ -89,6 +100,8 @@ Open `server/.env` and fill in:
 - `JWT_SECRET`: a long random string. Generate one with
   `node -e "console.log(require('crypto').randomBytes(32).toString('hex'))"`.
 - `TMDB_API_KEY`: the v3 "API Key" from https://www.themoviedb.org/settings/api.
+- `CLIENT_ORIGIN`: the address of the React app, exactly as Vite prints it in
+  step 2, with no trailing slash.
 
 Then start it:
 
@@ -96,7 +109,7 @@ Then start it:
 npm run dev
 ```
 
-It prints `connected to MongoDB` and `API listening on http://localhost:3000`.
+It prints `connected to MongoDB` and `API listening on port 3000`.
 If a setting is missing, it stops and names it.
 
 ### 2. Client
@@ -110,7 +123,9 @@ cp .env.example .env.development
 npm run dev
 ```
 
-Open http://localhost:5173. The Browse page shows this week's trending movies.
+In `client/.env.development`, set `VITE_API_URL` to the address of your API
+(the one the server printed, with its port). Then open the address Vite prints.
+The Browse page shows this week's trending movies.
 
 ### 3. Tests
 
@@ -121,6 +136,26 @@ cd client && npm test    # the star rating component and the list helpers
 ```
 
 The tests need no database and no TMDB key.
+
+## Deployment
+
+Three pieces, three hosts: the database on MongoDB Atlas, the API on Render, the
+React app on Netlify. The browser talks only to the API; only the API talks to
+the database and to TMDB.
+
+| Host | Settings |
+|---|---|
+| MongoDB Atlas | Network Access allows `0.0.0.0/0`, so Render can connect |
+| Render (web service) | Root directory `server` · build `npm ci` · start `npm start` · environment variables `MONGODB_URI`, `JWT_SECRET` (a new one, not the development one), `CLIENT_ORIGIN` (the Netlify address), `TMDB_API_KEY`, `NODE_ENV=production`; Render sets `PORT` itself |
+| Netlify (site) | Base directory `client` · build `npm run build` · publish `client/dist` · environment variable `VITE_API_URL` (the Render address) |
+
+`client/public/_redirects` sends every address to `index.html`, so refreshing a
+page like `/watchlist` does not answer 404. Every push to `master` redeploys both
+hosts. A `VITE_` value is built into the app: after changing one, deploy the
+site again.
+
+GitHub Actions (`.github/workflows/ci.yml`) runs the server and client tests on
+every push and pull request.
 
 ## API
 
@@ -189,24 +224,26 @@ account still exists, and answer 401 if not.
 ### Try it with curl
 
 ```sh
+API=https://your-api-name.onrender.com
+
 # 1 · no token
-curl -i localhost:3000/api/watchlist                     # 401
+curl -i $API/api/watchlist                               # 401
 
 # 2 · Alice signs up; copy the token from the answer
-curl -X POST localhost:3000/api/auth/signup \
+curl -X POST $API/api/auth/signup \
   -H "Content-Type: application/json" \
   -d '{"email":"alice@uni.edu","password":"hunter222","displayName":"Alice"}'
 TOKEN=paste-the-token-here
 
 # 3 · save Inception, rate it, list, ask the genie
-curl -X POST localhost:3000/api/watchlist \
+curl -X POST $API/api/watchlist \
   -H "Content-Type: application/json" -H "Authorization: Bearer $TOKEN" \
   -d '{"tmdbId":27205}'
-curl -X PATCH localhost:3000/api/watchlist/PASTE-THE-_id \
+curl -X PATCH $API/api/watchlist/PASTE-THE-_id \
   -H "Content-Type: application/json" -H "Authorization: Bearer $TOKEN" \
   -d '{"watched":true,"rating":5}'
-curl localhost:3000/api/watchlist -H "Authorization: Bearer $TOKEN"
-curl -X POST localhost:3000/api/genie \
+curl $API/api/watchlist -H "Authorization: Bearer $TOKEN"
+curl -X POST $API/api/genie \
   -H "Content-Type: application/json" -H "Authorization: Bearer $TOKEN" \
   -d '{"seedTmdbIds":[27205],"minRating":7}'
 ```
